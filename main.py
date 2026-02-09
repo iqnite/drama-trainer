@@ -98,20 +98,18 @@ def filter_script_for_user(script_text: str, user_part: str) -> str:
 
 
 def read_pdf(client, doc_data, prompt):
-    # response = client.models.generate_content(
-    #     model="gemini-3-flash-preview",
-    #     contents=[
-    #         types.Part.from_bytes(
-    #             data=doc_data,
-    #             mime_type="application/pdf",
-    #         ),
-    #         prompt,
-    #     ],
-    # )
+    response = client.models.generate_content(
+        model="gemini-3-flash-preview",
+        contents=[
+            types.Part.from_bytes(
+                data=doc_data,
+                mime_type="application/pdf",
+            ),
+            prompt,
+        ],
+    )
 
-    # return response.text
-    with open("out.txt", "r") as f:
-        return f.read()
+    return response.text
 
 
 def merge_audio_segments(segments, channels=1, rate=24000, sample_width=2):
