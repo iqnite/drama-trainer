@@ -155,20 +155,11 @@ def process_script_with_pauses(script_text: str, user_part: str, client):
     return "\n".join(processed_lines), pause_info
 
 
-def create_audio_with_pauses(client, prompt, user_part=None):
-    """Generate audio, optionally including pauses for user's lines."""
-    if user_part:
-        # Process the script to identify where pauses should occur
-        prompt, pause_info = process_script_with_pauses(prompt, user_part, client)
-
-        # Request TTS to include the pause instructions
-        tts_prompt = f"You are reading a theater script aloud. When you encounter '[PAUSE' instructions, pause for the indicated duration instead of reading the text. Here is the script:\n\n{prompt}"
-    else:
-        tts_prompt = prompt
-
+def create_audio_segment(client, text):
+    """Generate audio for a text segment without any user filtering."""
     response = client.models.generate_content(
         model="gemini-2.5-flash-preview-tts",
-        contents=tts_prompt,
+        contents=text,
         config=types.GenerateContentConfig(
             response_modalities=["AUDIO"],
             speech_config=types.SpeechConfig(
@@ -180,9 +171,55 @@ def create_audio_with_pauses(client, prompt, user_part=None):
             ),
         ),
     )
-
     data = response.candidates[0].content.parts[0].inline_data.data
     return data
+
+
+def create_audio_with_pauses(client, script_text, user_part=None):
+    """Generate audio, inserting actual silence for user's lines."""
+    if not user_part:
+        # No user part specified, generate audio for entire script
+        return create_audio_segment(
+            client,
+            f"The following text contains a theater play. Read it aloud. Do not generate any text, only audio.\n{script_text}",
+        )
+
+    # Split script into segments based on speaker
+    lines = script_text.strip().split("\n")
+    audio_segments = []
+    current_segment = []
+
+    for line in lines:
+        parsed = parse_script_line(line)
+
+        if parsed and parsed[0].lower() == user_part.lower():
+            # This is a user line - generate audio for accumulated lines first
+            if current_segment:
+                segment_text = "\n".join(current_segment)
+                prompt = f"Read the following theater script aloud:\n{segment_text}"
+                audio_data = create_audio_segment(client, prompt)
+                audio_segments.append(audio_data)
+                current_segment = []
+
+            # Generate silence for user's line
+            actor, text = parsed
+            word_count = count_words(text)
+            pause_duration = word_count * 0.5
+            silence = generate_silence(pause_duration)
+            audio_segments.append(silence)
+        else:
+            # Not a user line, accumulate it
+            current_segment.append(line)
+
+    # Don't forget the last segment
+    if current_segment:
+        segment_text = "\n".join(current_segment)
+        prompt = f"Read the following theater script aloud:\n{segment_text}"
+        audio_data = create_audio_segment(client, prompt)
+        audio_segments.append(audio_data)
+
+    # Merge all segments
+    return merge_audio_segments(audio_segments)
 
 
 if __name__ == "__main__":
@@ -206,8 +243,7 @@ if __name__ == "__main__":
     audio_segments = []
     for i, text_slice in enumerate(sliced_pdf_text):
         print(f"Generating audio {i+1}/{len(sliced_pdf_text)}...")
-        prompt = f"The following text contains a theater play. Read it aloud. Do not generate any text, only audio.\n{text_slice}"
-        data = create_audio_with_pauses(client, prompt, user_part=part)
+        data = create_audio_with_pauses(client, text_slice, user_part=part)
         audio_segments.append(data)
         if i < len(sliced_pdf_text) - 1:
             sleep(60)
