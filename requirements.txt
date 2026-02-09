@@ -1,1 +1,3 @@
 google-genai
+httpx
+python-dotenv
