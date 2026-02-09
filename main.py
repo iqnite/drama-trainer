@@ -200,20 +200,17 @@ if __name__ == "__main__":
     print("Reading PDF...")
     pdf_text = read_pdf(client, doc_data, prompt)
     assert pdf_text is not None
-    with open("out.txt", "w") as f:
-        f.write(pdf_text)
 
     print("Preprocessing text...")
     sliced_pdf_text = slice_text(pdf_text, 7000)
     audio_segments = []
     for i, text_slice in enumerate(sliced_pdf_text):
         print(f"Generating audio {i+1}/{len(sliced_pdf_text)}...")
-        with open(f"out{i}.txt", "w") as f:
-            f.write(text_slice)
         prompt = f"The following text contains a theater play. Read it aloud. Do not generate any text, only audio.\n{text_slice}"
         data = create_audio_with_pauses(client, prompt, user_part=part)
         audio_segments.append(data)
-        sleep(60)
+        if i < len(sliced_pdf_text) - 1:
+            sleep(60)
 
     print("Merging audio segments...")
     merged_audio = merge_audio_segments(audio_segments)
