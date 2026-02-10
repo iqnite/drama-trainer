@@ -246,6 +246,7 @@ if __name__ == "__main__":
         data = create_audio_with_pauses(client, text_slice, user_part=part)
         audio_segments.append(data)
         if i < len(sliced_pdf_text) - 1:
+            print("Waiting 1 minute as required by the API...")
             sleep(60)
 
     print("Merging audio segments...")
