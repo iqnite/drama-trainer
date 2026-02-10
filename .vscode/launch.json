@@ -11,7 +11,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
-            "args": "https://raw.githubusercontent.com/iqnite/drama-trainer/refs/heads/main/test_files/script.pdf out.wav HARRIS"
+            "args": "https://raw.githubusercontent.com/iqnite/drama-trainer/refs/heads/main/test_files/script.pdf test_files/out.wav HARRIS"
         }
     ]
 }
