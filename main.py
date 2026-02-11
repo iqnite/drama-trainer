@@ -5,13 +5,13 @@ Feb. 2026
 """
 
 import sys
-import httpx
+import struct
 import wave
+import httpx
 from time import sleep
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-import struct
 
 load_dotenv()
 
@@ -177,12 +177,10 @@ def create_audio_segment(client, text):
 
 def create_audio_with_pauses(client, script_text, user_part=None):
     """Generate audio, inserting actual silence for user's lines."""
+    prompt = "Read the following theater script aloud, including titles. Do not generate any text, only respond with audio.\n{}"
     if not user_part:
         # No user part specified, generate audio for entire script
-        return create_audio_segment(
-            client,
-            f"The following text contains a theater play. Read it aloud. Do not generate any text, only audio.\n{script_text}",
-        )
+        return create_audio_segment(client, prompt.format(script_text.strip()))
 
     # Split script into segments based on speaker
     lines = script_text.strip().split("\n")
@@ -196,8 +194,7 @@ def create_audio_with_pauses(client, script_text, user_part=None):
             # This is a user line - generate audio for accumulated lines first
             if current_segment:
                 segment_text = "\n".join(current_segment)
-                prompt = f"Read the following theater script aloud:\n{segment_text}"
-                audio_data = create_audio_segment(client, prompt)
+                audio_data = create_audio_segment(client, prompt.format(segment_text))
                 audio_segments.append(audio_data)
                 current_segment = []
 
@@ -214,8 +211,7 @@ def create_audio_with_pauses(client, script_text, user_part=None):
     # Don't forget the last segment
     if current_segment:
         segment_text = "\n".join(current_segment)
-        prompt = f"Read the following theater script aloud:\n{segment_text}"
-        audio_data = create_audio_segment(client, prompt)
+        audio_data = create_audio_segment(client, prompt.format(segment_text))
         audio_segments.append(audio_data)
 
     # Merge all segments
@@ -233,7 +229,7 @@ if __name__ == "__main__":
 
     doc_data = httpx.get(doc_url).content
 
-    prompt = "The document contains a script for a theater play. Extract the speech parts in 'Actor: Text' format. Respond with only the extracted text."
+    prompt = "The document contains a script for a theater play. Extract the speech parts in 'Actor: Text' format, including titles. Respond with only the extracted text."
     print("Reading PDF...")
     pdf_text = read_pdf(client, doc_data, prompt)
     assert pdf_text is not None
