@@ -177,7 +177,7 @@ def create_audio_segment(client, text):
 
 def create_audio_with_pauses(client, script_text, user_part=None):
     """Generate audio, inserting actual silence for user's lines."""
-    prompt = "Read the following theater script aloud, including titles. Do not generate any text, only respond with audio.\n{}"
+    prompt = "Read the following theater script aloud. Also read titles. Do not generate any text, only respond with audio.\n{}"
     if not user_part:
         # No user part specified, generate audio for entire script
         return create_audio_segment(client, prompt.format(script_text.strip()))
@@ -231,8 +231,10 @@ if __name__ == "__main__":
 
     prompt = "The document contains a script for a theater play. Extract the speech parts in 'Actor: Text' format, including titles. Respond with only the extracted text."
     print("Reading PDF...")
-    pdf_text = read_pdf(client, doc_data, prompt)
-    assert pdf_text is not None
+    # pdf_text = read_pdf(client, doc_data, prompt)
+    # assert pdf_text is not None
+    with open("extracted_script.txt", "r") as f:
+        pdf_text = f.read()
 
     print("Preprocessing text...")
     sliced_pdf_text = slice_text(pdf_text, 7000)
