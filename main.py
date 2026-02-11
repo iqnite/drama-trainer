@@ -231,10 +231,10 @@ if __name__ == "__main__":
 
     prompt = "The document contains a script for a theater play. Extract the speech parts in 'Actor: Text' format, including titles. Respond with only the extracted text."
     print("Reading PDF...")
-    # pdf_text = read_pdf(client, doc_data, prompt)
-    # assert pdf_text is not None
-    with open("extracted_script.txt", "r") as f:
-        pdf_text = f.read()
+    pdf_text = read_pdf(client, doc_data, prompt)
+    assert pdf_text is not None
+    # with open("extracted_script.txt", "r") as f:
+    #     pdf_text = f.read()
 
     print("Preprocessing text...")
     sliced_pdf_text = slice_text(pdf_text, 7000)
